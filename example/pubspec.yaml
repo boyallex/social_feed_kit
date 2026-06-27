@@ -1,0 +1,21 @@
+name: social_feed_kit_example
+description: Demonstrates social_feed_kit with two feeds sharing one store.
+publish_to: 'none'
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  social_feed_kit:
+    path: ../
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
