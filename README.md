@@ -54,15 +54,3 @@ ListenableBuilder(
 );
 ```
 
-## Example
-
-Run the bundled example app with two tabs that share one `PostStatisticStore`:
-
-```bash
-cd example
-flutter run
-```
-
-## License
-
-MIT — see [LICENSE](LICENSE).
