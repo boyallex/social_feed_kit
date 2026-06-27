@@ -60,8 +60,8 @@ class SocialFeedExampleApp extends StatelessWidget {
           ),
           body: TabBarView(
             children: [
-              FeedTab(controller: globalFeed, store: store),
-              FeedTab(controller: personalFeed, store: store),
+              FeedTab(controller: globalFeed),
+              FeedTab(controller: personalFeed),
             ],
           ),
         ),
@@ -74,39 +74,35 @@ class FeedTab extends StatelessWidget {
   const FeedTab({
     super.key,
     required this.controller,
-    required this.store,
   });
 
   final FeedListController controller;
-  final PostStatisticStore store;
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([controller, store]),
+      listenable: controller,
       builder: (context, _) {
-        final posts = controller.posts;
+        final items = controller.items;
 
-        if (posts.isEmpty) {
+        if (items.isEmpty) {
           return const Center(child: Text('No posts'));
         }
 
         return ListView.builder(
-          itemCount: posts.length,
+          itemCount: items.length,
           itemBuilder: (context, index) {
-            final post = posts[index];
-            final statistic = store.statisticFor(post.id);
-
-            if (statistic == null) {
-              return const SizedBox.shrink();
-            }
+            final item = items[index];
 
             return PostCard(
-              post: post,
-              statistic: statistic,
-              onLike: () => store.likePost(post.id),
+              post: item.post,
+              statistic: item.statistic,
+              onLike: () => controller.likePost(item.post.id),
               onCommentTap: () {
-                store.updateComments(post.id, statistic.commentsCount + 1);
+                controller.store.updateComments(
+                  item.post.id,
+                  item.statistic.commentsCount + 1,
+                );
               },
             );
           },

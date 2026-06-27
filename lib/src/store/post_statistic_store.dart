@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 import '../models/post.dart';
 import '../models/post_statistic.dart';
 
+/// Performs the remote like/unlike action for a post [id].
+typedef LikePostAction = Future<void> Function(int id);
+
 /// Central store for post statistics shared across multiple feed lists.
 class PostStatisticStore extends ChangeNotifier {
   final Map<int, PostStatistic> _statistics = {};
@@ -13,7 +16,9 @@ class PostStatisticStore extends ChangeNotifier {
   PostStatistic? statisticFor(int id) => _statistics[id];
 
   /// Adds statistics for posts that are not yet tracked.
-  void mergePosts(List<Post> posts) {
+  ///
+  /// Set [notify] to `false` when the caller will notify listeners separately.
+  void mergePosts(List<Post> posts, {bool notify = true}) {
     var changed = false;
 
     for (final post in posts) {
@@ -25,27 +30,52 @@ class PostStatisticStore extends ChangeNotifier {
       changed = true;
     }
 
-    if (changed) {
+    if (changed && notify) {
       notifyListeners();
     }
   }
 
   /// Optimistically toggles the like state for [id].
-  void likePost(int id) {
+  ///
+  /// When [action] is provided, runs it after the optimistic update and rolls
+  /// back to the previous [PostStatistic] if it fails. [onFailure] is called
+  /// after rollback.
+  Future<void> likePost(
+    int id, {
+    LikePostAction? action,
+    VoidCallback? onFailure,
+  }) async {
     final current = _statistics[id];
     if (current == null) {
       return;
     }
 
+    final previous = current;
+    _statistics[id] = _toggledStatistic(current);
+    notifyListeners();
+
+    if (action == null) {
+      return;
+    }
+
+    try {
+      await action(id);
+    } catch (_) {
+      _statistics[id] = previous;
+      notifyListeners();
+      onFailure?.call();
+    }
+  }
+
+  PostStatistic _toggledStatistic(PostStatistic current) {
     final liked = current.isLiked;
     final nextCount = liked
         ? (current.likesCount > 0 ? current.likesCount - 1 : 0)
         : current.likesCount + 1;
-    _statistics[id] = current.copyWith(
+    return current.copyWith(
       isLiked: !liked,
       likesCount: nextCount,
     );
-    notifyListeners();
   }
 
   /// Updates the comment counter for [id].
